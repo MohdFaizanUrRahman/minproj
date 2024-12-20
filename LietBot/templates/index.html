@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            margin: 0;
+            height: 100vh;
+        }
+        header {
+            width: 100%;
+            padding: 20px;
+            background: #0078d7;
+            color: white;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+        }
+        main {
+            margin-top: 80px; /* Make space for the fixed header */
+            flex-grow: 1;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        main img.logo {
+            height: 200px;
+            width: 200px;
+            align-self: flex-end;
+
+        }
+
+        main #space{
+            width: 300px;
+        }
+        #chatbox {
+            width: 80%;
+            max-width: 800px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px;
+        }
+        #messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: #fafafa;
+            max-height: 300px;
+        }
+        .message {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .message.user {
+            justify-content: flex-end;
+            color: #333;
+        }
+        .message.bot {
+            justify-content: flex-start;
+            color: #0078d7;
+        }
+        .message.bot img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+        #input {
+            display: flex;
+        }
+        #input input {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        #input button {
+            padding: 10px;
+            font-size: 18px;
+            color: white;
+            background-color: #0078d7;
+            border: none;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #input button:hover {
+            background-color: #005bb5;
+        }
+
+         footer {
+            background-color: #0078d7;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+            height: 80px;
+
+        }
+
+        footer img.logo {
+            height: auto;
+            width: auto;
+            margin-left: 30px;
+        }
+
+        footer h1 {
+            font-size: 2rem;
+            text-align: right;
+            margin-right: 30px;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0078d7;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 2s linear infinite;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>LIET BOT </h1>
+        <h1>Generative AI Powered Chatbot</h1>
+
+    </header>
+    <main>
+        <div id="space"></div>
+        <div id="chatbox">
+            <div id="messages"></div>
+            <div id="input">
+                <input type="text" id="userInput" placeholder="Type your message here...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+        <div id="loader" class="loader"></div>
+        <div id="space"></div>
+
+
+        <div><img src="static/logo.png" alt="Header Logo" class="logo"></div>
+    </main>
+
+    <script>
+        // Append the initial greeting message from the chatbot
+        function greetUser() {
+            const greeting = "Hello! How can I assist you today with information about our Engineering College?";
+            appendMessage(greeting, 'bot');
+        }
+
+        function appendMessage(content, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+
+            if (sender === 'bot') {
+                const botIcon = document.createElement('img');
+                botIcon.src = 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png'; // Replace with a fancy bot icon URL
+                messageDiv.appendChild(botIcon);
+            }
+
+            const messageContent = document.createElement('span');
+            messageContent.textContent = content;
+            messageDiv.appendChild(messageContent);
+
+            document.getElementById('messages').appendChild(messageDiv);
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+        }
+
+        async function sendMessage() {
+            const userInput = document.getElementById('userInput').value;
+            if (!userInput) return;
+
+            appendMessage(userInput, 'user');
+            document.getElementById('userInput').value = '';
+
+            const loader = document.getElementById('loader');
+            const resultDiv = document.getElementById('messages');
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch('http://localhost:5000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: userInput })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    appendMessage(result.reply, 'bot');
+                } else {
+                    appendMessage('Error: ' + result.error, 'bot');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                appendMessage('An error occurred while translating.', 'bot');
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        // Greet the user when the page loads
+        window.onload = greetUser;
+    </script>
+<footer>
+    <img src="static/Lords.png" alt="Footer Logo" class="logo">
+    <h1>Department of Computer Science and Engineering</h1>
+    </footer>
+</body>
+</html>
